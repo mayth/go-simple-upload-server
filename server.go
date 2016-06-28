@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -99,12 +100,18 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, fmt.Errorf("the size of uploaded content is %d, but %d bytes written", size, written))
 	}
+	uploadedUrl := strings.TrimPrefix(dstPath, s.DocumentRoot)
+	if !strings.HasPrefix(uploadedUrl, "/") {
+		uploadedUrl = "/" + uploadedUrl
+	}
+	uploadedUrl = "/files" + uploadedUrl
 	logger.WithFields(logrus.Fields{
 		"path": dstPath,
+		"url":  uploadedUrl,
 		"size": size,
 	}).Info("file uploaded by POST")
 	w.WriteHeader(http.StatusOK)
-	writeSuccess(w, dstPath)
+	writeSuccess(w, uploadedUrl)
 }
 
 func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
