@@ -14,6 +14,9 @@ $ ./simple_upload_server -token f9403fc5f537b4ab332d $HOME/tmp
 
 ## Uploading
 
+You can upload files with `POST /upload`.
+The filename is taken from the original file if available. If not, SHA1 hex digest will be used as the filename.
+
 ```
 $ echo 'Hello, world!' > sample.txt
 $ curl -Ffile=@sample.txt 'http://localhost:25478/upload?token=f9403fc5f537b4ab332d'
@@ -25,7 +28,19 @@ $ cat $HOME/tmp/sample.txt
 hello, world!
 ```
 
+**OR**
+
+Use `PUT /files/(filename)`.
+In this case, the original file name is ignored, and the name is taken from the URL.
+
+```
+$ curl -X PUT -Ffile=@sample.txt "http://localhost:25478/files/another_sample.txt?token=f9403fc5f537b4ab332d"
+{"ok":true,"path":"/files/another_sample.txt"}
+```
+
 ## Downloading
+
+`GET /files/(filename)`.
 
 ```
 $ curl 'http://localhost:25478/files/sample.txt?token=f9403fc5f537b4ab332d'
@@ -49,3 +64,9 @@ INFO[0000] start listening                               ip=0.0.0.0 port=25478 r
 ```
 
 NOTE: The token is generated from the random number, so it will change every time you start the server.
+
+# Docker
+
+```
+$ docker run -p 25478:25478 -v $HOME/tmp:/var/root mayth/go-simple-upload-server app -token f9403fc5f537b4ab332d /var/root
+```
