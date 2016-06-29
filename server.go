@@ -100,18 +100,18 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, fmt.Errorf("the size of uploaded content is %d, but %d bytes written", size, written))
 	}
-	uploadedUrl := strings.TrimPrefix(dstPath, s.DocumentRoot)
-	if !strings.HasPrefix(uploadedUrl, "/") {
-		uploadedUrl = "/" + uploadedUrl
+	uploadedURL := strings.TrimPrefix(dstPath, s.DocumentRoot)
+	if !strings.HasPrefix(uploadedURL, "/") {
+		uploadedURL = "/" + uploadedURL
 	}
-	uploadedUrl = "/files" + uploadedUrl
+	uploadedURL = "/files" + uploadedURL
 	logger.WithFields(logrus.Fields{
 		"path": dstPath,
-		"url":  uploadedUrl,
+		"url":  uploadedURL,
 		"size": size,
 	}).Info("file uploaded by POST")
 	w.WriteHeader(http.StatusOK)
-	writeSuccess(w, uploadedUrl)
+	writeSuccess(w, uploadedURL)
 }
 
 func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
@@ -169,11 +169,11 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger.WithFields(logrus.Fields{
-		"path": targetPath,
+		"path": r.URL.Path,
 		"size": n,
 	}).Info("file uploaded by PUT")
 	w.WriteHeader(http.StatusOK)
-	writeSuccess(w, targetPath)
+	writeSuccess(w, r.URL.Path)
 }
 
 func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
