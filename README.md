@@ -47,6 +47,30 @@ $ curl 'http://localhost:25478/files/sample.txt?token=f9403fc5f537b4ab332d'
 hello, world!
 ```
 
+## Existence Check
+
+`HEAD /files/(filename)`.
+
+```
+$ curl -I 'http://localhost:25478/files/foobar.txt?token=f9403fc5f537b4ab332d'
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Content-Length: 9
+Content-Type: text/plain; charset=utf-8
+Last-Modified: Sun, 09 Oct 2016 14:35:39 GMT
+Date: Sun, 09 Oct 2016 14:35:43 GMT
+
+$ curl 'http://localhost:25478/files/foobar.txt?token=f9403fc5f537b4ab332d'
+hello!!!
+
+$ curl -I 'http://localhost:25478/files/unknown?token=f9403fc5f537b4ab332d'
+HTTP/1.1 404 Not Found
+Content-Type: text/plain; charset=utf-8
+X-Content-Type-Options: nosniff
+Date: Sun, 09 Oct 2016 14:37:48 GMT
+Content-Length: 19
+```
+
 
 # Security
 
