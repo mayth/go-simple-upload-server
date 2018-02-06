@@ -5,6 +5,8 @@ MAINTAINER Mei Akizuru
 RUN mkdir -p /go/src/app
 COPY . /go/src/app
 
+WORKDIR /go/src/app
+
 # download the dependencies and build the application
 RUN go-wrapper download
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go-wrapper install
