@@ -89,6 +89,19 @@ INFO[0000] start listening                               ip=0.0.0.0 port=25478 r
 
 NOTE: The token is generated from the random number, so it will change every time you start the server.
 
+# Cors enable flag
+Enable Access-Control-Allow-Origin for testing and development environments
+
+set flag
+
+    -cors_enable true
+
+e.g.
+
+```
+$ docker run -p 25478:25478 -v $HOME/tmp:/var/root -cors_enable true -token f9403fc5f537b4ab332d /var/root
+```
+
 # Docker
 
 ```
