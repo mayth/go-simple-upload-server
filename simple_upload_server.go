@@ -20,6 +20,7 @@ func run(args []string) int {
 	maxUploadSize := flag.Int64("upload_limit", 5242880, "max size of uploaded file (byte)")
 	tokenFlag := flag.String("token", "", "specify the security token (it is automatically generated if empty)")
 	logLevelFlag := flag.String("loglevel", "info", "logging level")
+	corsEnable := flag.String("cors_enable", "false", "set to true to enable cors")
 	flag.Parse()
 	serverRoot := flag.Arg(0)
 	if len(serverRoot) == 0 {
@@ -48,8 +49,9 @@ func run(args []string) int {
 		"token":        token,
 		"upload_limit": *maxUploadSize,
 		"root":         serverRoot,
+		"cors_enable":         corsEnable,
 	}).Info("start listening")
-	server := NewServer(serverRoot, *maxUploadSize, token)
+	server := NewServer(serverRoot, *maxUploadSize, token, *corsEnable)
 	http.Handle("/upload", server)
 	http.Handle("/files/", server)
 	http.ListenAndServe(fmt.Sprintf("%s:%d", *bindAddress, *listenPort), nil)

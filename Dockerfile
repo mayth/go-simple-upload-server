@@ -1,6 +1,6 @@
 FROM golang:1.8 AS build-env
 
-MAINTAINER Mei Akizuru
+LABEL maintainer="Massimo Virgilio <massimo@cedeo.net>"
 
 RUN mkdir -p /go/src/app
 COPY . /go/src/app
