@@ -21,7 +21,7 @@ type Server struct {
 	// MaxUploadSize limits the size of the uploaded content, specified with "byte".
 	MaxUploadSize int64
 	SecureToken   string
-	CorsEnable   string
+	CorsEnable    string
 }
 
 // NewServer creates a new simple-upload server.
@@ -30,7 +30,7 @@ func NewServer(documentRoot string, maxUploadSize int64, token string, corsEnabl
 		DocumentRoot:  documentRoot,
 		MaxUploadSize: maxUploadSize,
 		SecureToken:   token,
-		CorsEnable: corsEnable,
+		CorsEnable:    corsEnable,
 	}
 }
 
@@ -44,6 +44,7 @@ func (s Server) handleGet(w http.ResponseWriter, r *http.Request) {
 	if s.CorsEnable == "true" {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
+	// w.Header().Set("Cache-Control", "max-age=0, must-revalidate, no-store")
 	http.StripPrefix("/files/", http.FileServer(http.Dir(s.DocumentRoot))).ServeHTTP(w, r)
 }
 
