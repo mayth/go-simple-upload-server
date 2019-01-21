@@ -11,6 +11,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"math/rand"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -124,9 +125,11 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	targetPath := path.Join(s.DocumentRoot, matches[1])
-	file, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	tempPath := fmt.Sprintf("%s__temp_%d", targetPath, rand.Intn(100000))
+
+	file, err := os.OpenFile(tempPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		logger.WithError(err).WithField("path", targetPath).Error("failed to open the file")
+		logger.WithError(err).WithField("path", tempPath).Error("failed to open the file")
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
@@ -163,11 +166,23 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 
 	n, err := io.Copy(file, srcFile)
 	if err != nil {
-		logger.WithError(err).WithField("path", targetPath).Error("failed to write body to the file")
+		logger.WithError(err).WithField("path", tempPath).Error("failed to write body to the file")
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
 	}
+	// excplicitly close file to flush, then rename from temp name to actual name in atomic file 
+	// operation if on linux or other unix-like OS (windows hosts should look into https://github.com/natefinch/atomic
+	// package for atomic file write operations)
+	file.Close()
+	err = os.Rename(tempPath, targetPath)
+	if err != nil {
+		logger.WithError(err).WithField("path", targetPath).Error("failed to rename temp file to final filename for upload")
+		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, err)
+		return
+	}
+
 	logger.WithFields(logrus.Fields{
 		"path": r.URL.Path,
 		"size": n,
