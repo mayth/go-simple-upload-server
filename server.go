@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Server represents a simple-upload server.
