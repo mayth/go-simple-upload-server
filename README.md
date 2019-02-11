@@ -72,6 +72,24 @@ Content-Length: 19
 ```
 
 
+# TLS
+
+To enable TLS support, add `-cert` and `-key` options:
+
+```
+$ ./simple_upload_server -cert ./cert.pem -key ./key.pem root/
+INFO[0000] starting up simple-upload-server
+WARN[0000] token generated                               token=28d93c74c8589ab62b5e
+INFO[0000] start listening TLS                           cert=./cert.pem key=./key.pem port=25443
+INFO[0000] start listening                               ip=0.0.0.0 port=25478 root=root token=28d93c74c8589ab62b5e upload_limit=5242880
+...
+```
+
+This server listens on `25443/tcp` for TLS connections by default. This can be changed by passing `-tlsport` option.
+
+NOTE: The endpoint using HTTP is still active even if TLS is enabled.
+
+
 # Security
 
 There is no Basic/Digest authentication. This app implements dead simple authentication: "security token".
