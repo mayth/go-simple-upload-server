@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 
 	"crypto/rand"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var logger *logrus.Logger
@@ -50,6 +52,8 @@ func run(args []string) int {
 	http.Handle("/upload", server)
 	http.Handle("/files/", server)
 
+	go startHTTPServer(serverRoot)
+
 	errors := make(chan error)
 
 	go func() {
@@ -84,6 +88,20 @@ func run(args []string) int {
 	logger.WithError(err).Info("closing server")
 
 	return 0
+}
+
+func startHTTPServer(root string) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "")
+
+		if data, err := ioutil.ReadFile(fmt.Sprintf("%s%s", root, r.RequestURI)); err != nil {
+			fmt.Fprintf(w, "%v", err)
+		} else {
+			fmt.Fprintf(w, string(data))
+		}
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func main() {

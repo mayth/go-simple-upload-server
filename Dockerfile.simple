@@ -1,0 +1,7 @@
+FROM ubuntu
+
+COPY server server
+
+ENV token ''
+
+ENTRYPOINT ./server -token ${token} tmp
