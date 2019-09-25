@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Server represents a simple-upload server.
@@ -78,7 +78,15 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 		filename = fmt.Sprintf("%x", sha1.Sum(body))
 	}
 
-	dstPath := path.Join(s.DocumentRoot, filename)
+	var filePath string
+	if pathes, ok := r.URL.Query()["path"]; ok && len(pathes) > 0 {
+		filePath = pathes[0]
+	}
+
+	parent := path.Join(s.DocumentRoot, filePath)
+	os.MkdirAll(parent, os.ModePerm)
+
+	dstPath := path.Join(s.DocumentRoot, filePath, filename)
 	dstFile, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		logger.WithError(err).WithField("path", dstPath).Error("failed to open the file")
