@@ -47,7 +47,7 @@ func run(args []string) int {
 	}
 	tlsEnabled := *certFile != "" && *keyFile != ""
 	server := NewServer(serverRoot, *maxUploadSize, token)
-	http.Handle("/upload", server)
+	http.Handle("/upload/", server)
 	http.Handle("/files/", server)
 
 	errors := make(chan error)
