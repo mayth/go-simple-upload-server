@@ -1,4 +1,4 @@
-FROM golang:1.8 AS build-env
+FROM golang:1.9 AS build-env
 
 MAINTAINER Mei Akizuru
 

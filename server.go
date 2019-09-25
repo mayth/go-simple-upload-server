@@ -33,7 +33,7 @@ func NewServer(documentRoot string, maxUploadSize int64, token string) Server {
 }
 
 func (s Server) handleGet(w http.ResponseWriter, r *http.Request) {
-	re := regexp.MustCompile(`^/files/([^/]+)$`)
+	re := regexp.MustCompile(`^/files(/[^/]+)+$`)
 	if !re.MatchString(r.URL.Path) {
 		w.WriteHeader(http.StatusNotFound)
 		writeError(w, fmt.Errorf("\"%s\" is not found", r.URL.Path))
@@ -78,7 +78,7 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 		filename = fmt.Sprintf("%x", sha1.Sum(body))
 	}
 
-	dstPath := path.Join(s.DocumentRoot, filename)
+	dstPath := path.Join(s.DocumentRoot, strings.TrimPrefix(r.URL.Path, "/upload"), filename)
 	dstFile, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		logger.WithError(err).WithField("path", dstPath).Error("failed to open the file")
