@@ -54,7 +54,7 @@ func getSize(content io.Seeker) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	_, err = content.Seek(0, os.SEEK_SET)
+	_, err = content.Seek(0, io.SeekStart)
 	if err != nil {
 		return 0, err
 	}
