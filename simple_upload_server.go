@@ -8,7 +8,7 @@ import (
 
 	"crypto/rand"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var logger *logrus.Logger
