@@ -21,14 +21,16 @@ type Server struct {
 	// MaxUploadSize limits the size of the uploaded content, specified with "byte".
 	MaxUploadSize int64
 	SecureToken   string
+	CorsEnable    bool
 }
 
 // NewServer creates a new simple-upload server.
-func NewServer(documentRoot string, maxUploadSize int64, token string) Server {
+func NewServer(documentRoot string, maxUploadSize int64, token string, corsEnable bool) Server {
 	return Server{
 		DocumentRoot:  documentRoot,
 		MaxUploadSize: maxUploadSize,
 		SecureToken:   token,
+		CorsEnable:    corsEnable,
 	}
 }
 
@@ -38,6 +40,9 @@ func (s Server) handleGet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		writeError(w, fmt.Errorf("\"%s\" is not found", r.URL.Path))
 		return
+	}
+	if s.CorsEnable == true {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 	http.StripPrefix("/files/", http.FileServer(http.Dir(s.DocumentRoot))).ServeHTTP(w, r)
 }
@@ -110,6 +115,9 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 		"url":  uploadedURL,
 		"size": size,
 	}).Info("file uploaded by POST")
+	if s.CorsEnable == true {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	w.WriteHeader(http.StatusOK)
 	writeSuccess(w, uploadedURL)
 }
@@ -172,6 +180,9 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		"path": r.URL.Path,
 		"size": n,
 	}).Info("file uploaded by PUT")
+	if s.CorsEnable == true {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	w.WriteHeader(http.StatusOK)
 	writeSuccess(w, r.URL.Path)
 }
