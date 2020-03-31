@@ -41,7 +41,7 @@ func (s Server) handleGet(w http.ResponseWriter, r *http.Request) {
 		writeError(w, fmt.Errorf("\"%s\" is not found", r.URL.Path))
 		return
 	}
-	if s.CorsEnable == true {
+	if s.CorsEnable {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 	http.StripPrefix("/files/", http.FileServer(http.Dir(s.DocumentRoot))).ServeHTTP(w, r)
@@ -115,7 +115,7 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 		"url":  uploadedURL,
 		"size": size,
 	}).Info("file uploaded by POST")
-	if s.CorsEnable == true {
+	if s.CorsEnable {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 	w.WriteHeader(http.StatusOK)
