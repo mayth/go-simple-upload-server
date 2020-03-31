@@ -11,7 +11,6 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"math/rand"
 
 	"github.com/sirupsen/logrus"
 )
@@ -133,16 +132,16 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	targetPath := path.Join(s.DocumentRoot, matches[1])
-	tempPath := fmt.Sprintf("%s__temp_%d", targetPath, rand.Intn(100000))
 
-	file, err := os.OpenFile(tempPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	// We have to create a new temporary file in the same device to avoid "invalid cross-device link" on renaming.
+	// Here is the easiest solution: create it in the same directory.
+	tempFile, err := ioutil.TempFile(s.DocumentRoot, "upload_")
 	if err != nil {
-		logger.WithError(err).WithField("path", tempPath).Error("failed to open the file")
+		logger.WithError(err).Error("failed to create a temporary file")
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
 	}
-	defer file.Close()
 	defer r.Body.Close()
 	srcFile, info, err := r.FormFile("file")
 	if err != nil {
@@ -172,19 +171,19 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	n, err := io.Copy(file, srcFile)
+	n, err := io.Copy(tempFile, srcFile)
 	if err != nil {
-		logger.WithError(err).WithField("path", tempPath).Error("failed to write body to the file")
+		logger.WithError(err).WithField("path", tempFile.Name()).Error("failed to write body to the file")
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
 		return
 	}
-	// excplicitly close file to flush, then rename from temp name to actual name in atomic file 
+	// excplicitly close file to flush, then rename from temp name to actual name in atomic file
 	// operation if on linux or other unix-like OS (windows hosts should look into https://github.com/natefinch/atomic
 	// package for atomic file write operations)
-	file.Close()
-	err = os.Rename(tempPath, targetPath)
-	if err != nil {
+	tempFile.Close()
+	if err := os.Rename(tempFile.Name(), targetPath); err != nil {
+		os.Remove(tempFile.Name())
 		logger.WithError(err).WithField("path", targetPath).Error("failed to rename temp file to final filename for upload")
 		w.WriteHeader(http.StatusInternalServerError)
 		writeError(w, err)
