@@ -194,7 +194,7 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		"path": r.URL.Path,
 		"size": n,
 	}).Info("file uploaded by PUT")
-	if s.CorsEnable == true {
+	if s.CorsEnable {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 	w.WriteHeader(http.StatusOK)
