@@ -206,7 +206,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	// if token is not found, check the form parameter.
 	if token == "" {
-		token = r.Form.Get("token")
+		token = r.FormValue("token")
 	}
 	if token != s.SecureToken {
 		w.WriteHeader(http.StatusUnauthorized)
