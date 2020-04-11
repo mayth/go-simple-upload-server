@@ -92,9 +92,11 @@ NOTE: The endpoint using HTTP is still active even if TLS is enabled.
 
 # Security
 
+## Token
+
 There is no Basic/Digest authentication. This app implements dead simple authentication: "security token".
 
-All requests should have `token` parameter (it can be passed from query strings or a form parameter). If it is completely matched with the server's token, the access is allowed; otherwise, returns `401 Unauthorized`.
+All requests should have `token` parameter (it can be passed as a query string or a form parameter). The server accepts the request only when the token is matched; otherwise, the server rejects the request and respond `401 Unauthorized`.
 
 You can specify the server's token on startup by `-token` option. If you don't so, the server generates the token and writes it to STDOUT at WARN level log, like as:
 
@@ -106,6 +108,10 @@ INFO[0000] start listening                               ip=0.0.0.0 port=25478 r
 ```
 
 NOTE: The token is generated from the random number, so it will change every time you start the server.
+
+## CORS
+
+If you enable CORS support using `-cors` option, the server append `Access-Control-Allow-Origin` header to the response. This feature is disabled by default.
 
 # Docker
 
