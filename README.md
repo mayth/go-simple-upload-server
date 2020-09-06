@@ -72,6 +72,32 @@ Content-Length: 19
 ```
 
 
+## CORS Preflight Request
+
+* `OPTIONS /files/(filename)`
+* `OPTIONS /upload`
+
+```
+$ curl -I 'http://localhost:25478/files/foo'
+HTTP/1.1 204 No Content
+Access-Control-Allow-Methods: PUT,GET,HEAD
+Access-Control-Allow-Origin: *
+Date: Sun, 06 Sep 2020 09:45:20 GMT
+
+$ curl -I -XOPTIONS 'http://localhost:25478/upload'
+HTTP/1.1 204 No Content
+Access-Control-Allow-Methods: POST
+Access-Control-Allow-Origin: *
+Date: Sun, 06 Sep 2020 09:45:32 GMT
+```
+
+notes:
+
+* Requests using `*` as a path, like as `OPTIONS * HTTP/1.1`, are not supported.
+* On sending `OPTIONS` request, `token` parameter is not required.
+* For `/files/(filename)` request, server replies "204 No Content" even if the specified file does not exist.
+
+
 # TLS
 
 To enable TLS support, add `-cert` and `-key` options:
