@@ -15,6 +15,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	rePathUpload = regexp.MustCompile(`^/upload$`)
+	rePathFiles  = regexp.MustCompile(`^/files/([^/]+)$`)
+
+	errTokenMismatch = errors.New("token mismatched")
+	errMissingToken  = errors.New("missing token")
+
+	protectedMethods = []string{http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut}
+)
+
 // Server represents a simple-upload server.
 type Server struct {
 	DocumentRoot string
@@ -35,8 +45,7 @@ func NewServer(documentRoot string, maxUploadSize int64, token string, enableCOR
 }
 
 func (s Server) handleGet(w http.ResponseWriter, r *http.Request) {
-	re := regexp.MustCompile(`^/files/([^/]+)$`)
-	if !re.MatchString(r.URL.Path) {
+	if !rePathFiles.MatchString(r.URL.Path) {
 		w.WriteHeader(http.StatusNotFound)
 		writeError(w, fmt.Errorf("\"%s\" is not found", r.URL.Path))
 		return
@@ -123,8 +132,7 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
-	re := regexp.MustCompile(`^/files/([^/]+)$`)
-	matches := re.FindStringSubmatch(r.URL.Path)
+	matches := rePathFiles.FindStringSubmatch(r.URL.Path)
 	if matches == nil {
 		logger.WithField("path", r.URL.Path).Info("invalid path")
 		w.WriteHeader(http.StatusNotFound)
@@ -201,16 +209,51 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, r.URL.Path)
 }
 
-func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s Server) handleOptions(w http.ResponseWriter, r *http.Request) {
+	var allowedMethods []string
+	if rePathFiles.MatchString(r.URL.Path) {
+		allowedMethods = []string{http.MethodPut, http.MethodGet, http.MethodHead}
+	} else if rePathUpload.MatchString(r.URL.Path) {
+		allowedMethods = []string{http.MethodPost}
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		writeError(w, errors.New("not found"))
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ","))
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s Server) checkToken(r *http.Request) error {
 	// first, try to get the token from the query strings
 	token := r.URL.Query().Get("token")
 	// if token is not found, check the form parameter.
 	if token == "" {
 		token = r.FormValue("token")
 	}
+	if token == "" {
+		return errMissingToken
+	}
 	if token != s.SecureToken {
+		return errTokenMismatch
+	}
+	return nil
+}
+
+func isAuthenticationRequired(r *http.Request) bool {
+	for _, m := range protectedMethods {
+		if m == r.Method {
+			return true
+		}
+	}
+	return false
+}
+
+func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := s.checkToken(r); isAuthenticationRequired(r) && err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		writeError(w, fmt.Errorf("authentication required"))
+		writeError(w, err)
 		return
 	}
 
@@ -221,6 +264,8 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handlePost(w, r)
 	case http.MethodPut:
 		s.handlePut(w, r)
+	case http.MethodOptions:
+		s.handleOptions(w, r)
 	default:
 		w.Header().Add("Allow", "GET,HEAD,POST,PUT")
 		w.WriteHeader(http.StatusMethodNotAllowed)
