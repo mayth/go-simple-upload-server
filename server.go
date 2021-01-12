@@ -17,7 +17,7 @@ import (
 
 var (
 	rePathUpload = regexp.MustCompile(`^/upload$`)
-	rePathFiles  = regexp.MustCompile(`^/files/([^/]+)$`)
+	rePathFiles  = regexp.MustCompile(`^/files(/.*)?(/[^/]+)$`)
 
 	errTokenMismatch = errors.New("token mismatched")
 	errMissingToken  = errors.New("missing token")
@@ -139,7 +139,9 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		writeError(w, fmt.Errorf("\"%s\" is not found", r.URL.Path))
 		return
 	}
-	targetPath := path.Join(s.DocumentRoot, matches[1])
+	targetDir := path.Join(s.DocumentRoot, matches[1])
+	targetFilename := matches[2]
+	targetPath := path.Join(targetDir, targetFilename)
 
 	// We have to create a new temporary file in the same device to avoid "invalid cross-device link" on renaming.
 	// Here is the easiest solution: create it in the same directory.
@@ -190,6 +192,16 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 	// operation if on linux or other unix-like OS (windows hosts should look into https://github.com/natefinch/atomic
 	// package for atomic file write operations)
 	tempFile.Close()
+
+        if err := os.MkdirAll(targetDir, 0777); err != nil {
+		os.Remove(tempFile.Name())
+		logger.WithError(err).WithField("path", targetPath).Error("failed to create directories")
+		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, err)
+		return
+        }
+
+
 	if err := os.Rename(tempFile.Name(), targetPath); err != nil {
 		os.Remove(tempFile.Name())
 		logger.WithError(err).WithField("path", targetPath).Error("failed to rename temp file to final filename for upload")
