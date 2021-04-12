@@ -1,0 +1,29 @@
+
+on: 
+  release:
+    types: [created]
+
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # build and publish in parallel: linux/386, linux/amd64, windows/386, windows/amd64, darwin/amd64 
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64]
+        go: [ '1.14', '1.13' ]
+        exclude:  
+          - goarch: "386"
+            goos: darwin 
+    steps:
+    - uses: actions/checkout@v2
+    - uses: wangyoucao577/go-release-action@v1.17
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        goversion: ${{ matrix.go }}
+        project_path: "./cmd/test-binary"
+        binary_name: "simple-upload-server"
+        extra_files: LICENSE README.md
