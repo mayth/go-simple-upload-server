@@ -24,6 +24,5 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         goversion: ${{ matrix.go }}
-        project_path: "./cmd/test-binary"
         binary_name: "simple-upload-server"
         extra_files: LICENSE README.md
