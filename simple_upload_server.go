@@ -62,7 +62,6 @@ func run(args []string) int {
 			protectedMethods = append(protectedMethods, http.MethodOptions)
 		}
 	}
-	logger.WithField("token", token).Info("token generated")
 	tlsEnabled := *certFile != "" && *keyFile != ""
 	server := NewServer(serverRoot, *maxUploadSize, token, *corsEnabled, protectedMethods)
 	http.Handle("/upload", server)
