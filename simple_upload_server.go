@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"crypto/rand"
 
@@ -20,6 +21,7 @@ func run(args []string) int {
 	// 5,242,880 bytes == 5 MiB
 	maxUploadSize := flag.Int64("upload_limit", 5242880, "max size of uploaded file (byte)")
 	tokenFlag := flag.String("token", "", "specify the security token (it is automatically generated if empty)")
+	protectedMethodFlag := flag.String("protected_method", "GET,POST,HEAD,PUT", "specify methods intended to be protect by the security token")
 	logLevelFlag := flag.String("loglevel", "info", "logging level")
 	certFile := flag.String("cert", "", "path to certificate file")
 	keyFile := flag.String("key", "", "path to key file")
@@ -46,8 +48,23 @@ func run(args []string) int {
 		token = fmt.Sprintf("%x", b)
 		logger.WithField("token", token).Warn("token generated")
 	}
+	protectedMethods := []string{}
+	for _, method := range strings.Split((*protectedMethodFlag), ",") {
+		if strings.EqualFold("GET", method) {
+			protectedMethods = append(protectedMethods, http.MethodGet)
+		} else if strings.EqualFold("POST", method) {
+			protectedMethods = append(protectedMethods, http.MethodPost)
+		} else if strings.EqualFold("HEAD", method) {
+			protectedMethods = append(protectedMethods, http.MethodHead)
+		} else if strings.EqualFold("PUT", method) {
+			protectedMethods = append(protectedMethods, http.MethodPut)
+		} else if strings.EqualFold("OPTIONS", method) {
+			protectedMethods = append(protectedMethods, http.MethodOptions)
+		}
+	}
+	logger.WithField("token", token).Info("token generated")
 	tlsEnabled := *certFile != "" && *keyFile != ""
-	server := NewServer(serverRoot, *maxUploadSize, token, *corsEnabled)
+	server := NewServer(serverRoot, *maxUploadSize, token, *corsEnabled, protectedMethods)
 	http.Handle("/upload", server)
 	http.Handle("/files/", server)
 
@@ -55,12 +72,13 @@ func run(args []string) int {
 
 	go func() {
 		logger.WithFields(logrus.Fields{
-			"ip":           *bindAddress,
-			"port":         *listenPort,
-			"token":        token,
-			"upload_limit": *maxUploadSize,
-			"root":         serverRoot,
-			"cors":         *corsEnabled,
+			"ip":               *bindAddress,
+			"port":             *listenPort,
+			"token":            token,
+			"protected_method": protectedMethods,
+			"upload_limit":     *maxUploadSize,
+			"root":             serverRoot,
+			"cors":             *corsEnabled,
 		}).Info("start listening")
 
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", *bindAddress, *listenPort), nil); err != nil {

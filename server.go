@@ -21,26 +21,26 @@ var (
 
 	errTokenMismatch = errors.New("token mismatched")
 	errMissingToken  = errors.New("missing token")
-
-	protectedMethods = []string{http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut}
 )
 
 // Server represents a simple-upload server.
 type Server struct {
 	DocumentRoot string
 	// MaxUploadSize limits the size of the uploaded content, specified with "byte".
-	MaxUploadSize int64
-	SecureToken   string
-	EnableCORS    bool
+	MaxUploadSize    int64
+	SecureToken      string
+	EnableCORS       bool
+	ProtectedMethods []string
 }
 
 // NewServer creates a new simple-upload server.
-func NewServer(documentRoot string, maxUploadSize int64, token string, enableCORS bool) Server {
+func NewServer(documentRoot string, maxUploadSize int64, token string, enableCORS bool, protectedMethods []string) Server {
 	return Server{
-		DocumentRoot:  documentRoot,
-		MaxUploadSize: maxUploadSize,
-		SecureToken:   token,
-		EnableCORS:    enableCORS,
+		DocumentRoot:     documentRoot,
+		MaxUploadSize:    maxUploadSize,
+		SecureToken:      token,
+		EnableCORS:       enableCORS,
+		ProtectedMethods: protectedMethods,
 	}
 }
 
@@ -241,8 +241,8 @@ func (s Server) checkToken(r *http.Request) error {
 	return nil
 }
 
-func isAuthenticationRequired(r *http.Request) bool {
-	for _, m := range protectedMethods {
+func (s Server) isAuthenticationRequired(r *http.Request) bool {
+	for _, m := range s.ProtectedMethods {
 		if m == r.Method {
 			return true
 		}
@@ -251,7 +251,7 @@ func isAuthenticationRequired(r *http.Request) bool {
 }
 
 func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := s.checkToken(r); isAuthenticationRequired(r) && err != nil {
+	if err := s.checkToken(r); s.isAuthenticationRequired(r) && err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		writeError(w, err)
 		return
