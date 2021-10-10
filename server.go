@@ -12,12 +12,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	rePathUpload = regexp.MustCompile(`^/upload$`)
-	rePathFiles  = regexp.MustCompile(`^/files/([^/]+)$`)
+	rePathUpload   = regexp.MustCompile(`^/upload$`)
+	rePathFiles    = regexp.MustCompile(`^/files/([^/]+)$`)
+	rePathFilesPut = regexp.MustCompile(`^/files/([^/]*)$`)
 
 	errTokenMismatch = errors.New("token mismatched")
 	errMissingToken  = errors.New("missing token")
@@ -132,14 +134,21 @@ func (s Server) handlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
-	matches := rePathFiles.FindStringSubmatch(r.URL.Path)
+	matches := rePathFilesPut.FindStringSubmatch(r.URL.Path)
 	if matches == nil {
 		logger.WithField("path", r.URL.Path).Info("invalid path")
 		w.WriteHeader(http.StatusNotFound)
 		writeError(w, fmt.Errorf("\"%s\" is not found", r.URL.Path))
 		return
 	}
-	targetPath := path.Join(s.DocumentRoot, matches[1])
+
+	filename := matches[1]
+	if filename == "" {
+		id := uuid.New()
+		filename = fmt.Sprintf("%x", id.String())
+	}
+
+	targetPath := path.Join(s.DocumentRoot, filename)
 
 	// We have to create a new temporary file in the same device to avoid "invalid cross-device link" on renaming.
 	// Here is the easiest solution: create it in the same directory.
@@ -198,15 +207,20 @@ func (s Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	outPath := r.URL.Path
+	if matches[1] == "" {
+		outPath = matches[0] + filename
+	}
+
 	logger.WithFields(logrus.Fields{
-		"path": r.URL.Path,
+		"path": matches[0] + filename,
 		"size": n,
 	}).Info("file uploaded by PUT")
 	if s.EnableCORS {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 	w.WriteHeader(http.StatusOK)
-	writeSuccess(w, r.URL.Path)
+	writeSuccess(w, outPath)
 }
 
 func (s Server) handleOptions(w http.ResponseWriter, r *http.Request) {
