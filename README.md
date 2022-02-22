@@ -144,3 +144,73 @@ If you enable CORS support using `-cors` option, the server append `Access-Contr
 ```
 $ docker run -p 25478:25478 -v $HOME/tmp:/var/root mayth/simple-upload-server -token f9403fc5f537b4ab332d /var/root
 ```
+
+# Docker-compose
+
+To run go-simple-upload-server as part of docker-compose with traefik as reverse proxy, you can find inspiration in this partial snippet:
+```
+version: "3.6"
+
+services:
+  reverse-proxy:
+    # The official v2 Traefik docker image
+    image: traefik:v2.6.1
+    container_name: traefik_public
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.certresolver.acme.httpchallenge=true
+      - --certificatesresolvers.certresolver.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.certresolver.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.certresolver.acme.email=yourmail@example.sk
+      - --certificatesresolvers.certresolver.acme.storage=/letsencrypt/acme.json
+      - --providers.docker.network=proxy
+      - --log.level=INFO
+    networks:
+      - proxy
+    ports:
+      # The HTTP port
+      - "80:80"
+      - "443:443"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /dockers/letsencrypt:/letsencrypt
+    labels:
+      - traefik.frontend.rule=Host(`traefik.example.sk`)"
+      - traefik.port=8081"
+  uploader:
+    image: mayth/simple-upload-server
+    command:
+      - -token
+      - c21beeafd4289e8ff916666666692333
+      - -protected_method
+      - POST,PUT
+      - -upload_limit
+        # 768 MB
+      - "805306368"
+      - -port
+      - "80"
+        # dir in docker to use for uploads/downloads
+      - /var/data
+    volumes:
+      - /dockers/uploader:/var/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.myredirect.redirectscheme.scheme=https
+      - traefik.http.routers.uplhttp.middlewares=myredirect
+      - traefik.http.routers.uplhttp.rule=Host(`upload.example.sk`,`www.upload.example.sk`)
+      - traefik.http.routers.uplhttp.entrypoints=web
+      - traefik.http.routers.uplsecure.rule=Host(`upload.example.sk`,`www.upload.example.sk`)
+      - traefik.http.routers.uplsecure.entrypoints=websecure
+      - traefik.http.routers.uplsecure.tls=true
+      - traefik.http.routers.uplsecure.tls.certresolver=certresolver
+      - traefik.http.services.uploader-service.loadbalancer.server.port=80
+      - traefik.http.services.uploader-service.loadbalancer.server.scheme=http
+    networks:
+      - proxy
+```
