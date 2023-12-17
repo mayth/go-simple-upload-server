@@ -1,19 +1,19 @@
-FROM golang:1.14 AS build-env
+ARG ARCH=amd64
+FROM golang:1.21 AS build
 
-MAINTAINER Mei Akizuru
+LABEL org.opencontainers.image.authors="Mei Akizuru <chimeaquas@hotmail.com>"
 
 RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
 
 # resolve dependency before copying whole source code
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 
 # copy other sources & build
 COPY . /go/src/app
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /go/bin/app
+RUN GOOS=linux GOARCH=${ARCH} CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM alpine:3.11 AS runtime-env
-COPY --from=build-env /go/bin/app /usr/local/bin/app
+FROM scratch
+COPY --from=build /go/bin/app /usr/local/bin/app
 ENTRYPOINT ["/usr/local/bin/app"]

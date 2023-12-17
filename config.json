@@ -1,0 +1,7 @@
+{
+    "document_root": "/opt/app",
+    "enable_cors": true,
+    "max_upload_size": 1048576,
+    "file_naming_strategy": "uuid",
+    "shutdown_timeout": 15000
+}
