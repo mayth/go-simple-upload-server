@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 )
 
 type response struct {
@@ -50,7 +49,7 @@ func writeSuccess(w http.ResponseWriter, path string) (int, error) {
 }
 
 func getSize(content io.Seeker) (int64, error) {
-	size, err := content.Seek(0, os.SEEK_END)
+	size, err := content.Seek(0, io.SeekEnd)
 	if err != nil {
 		return 0, err
 	}
