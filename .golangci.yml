@@ -1,3 +1,0 @@
-issues:
-    exclude:
-        - Error return value of `write(Error|Success)` is not checked
