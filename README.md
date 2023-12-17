@@ -74,7 +74,9 @@ As a result, the server operates like read-only mode.
 
 ## TLS
 
-TLS support is not implemented yet.
+v1 has TLS support but I decided to omit it from v2.
+
+Please consider using a reverse proxy like nginx.
 
 ## API
 
