@@ -3,5 +3,8 @@
     "enable_cors": true,
     "max_upload_size": 1048576,
     "file_naming_strategy": "uuid",
-    "shutdown_timeout": 15000
+    "shutdown_timeout": 15000,
+    "enable_auth": false,
+    "read_only_tokens": [],
+    "read_write_tokens": []
 }

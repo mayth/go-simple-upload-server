@@ -38,8 +38,33 @@ Configurations via the arguments take precedence over those came from the config
 
 ## Authentication
 
-No authentication mechanisms are implemented yet.
-This server accepts all requests from any clients.
+This server does not require authentication by default. Anyone who can access the server can get/upload files.
+
+The server implements a simple authentication mechanism using tokens.
+
+1. Configure the server to enable authentication: `"enable_auth": true` or `-enable_auth=true`.
+2. Prepare tokens. Any string value is valid as a token.
+3. Add them to the configuration. There are two keys in configuration: `read_only_tokens` and `read_write_tokens`.
+   If authentication is enabled but no tokens provided, the server generates a read-only token and a read-write token on its starting up.
+4. Request with the token. Add Authorization header with value `Bearer <TOKEN>` or `token=<TOKEN>` to the query parameter. Authorization header takes precedence.
+
+| Token Type |             Allowed Operations             |
+| ---------- | ------------------------------------------ |
+| read-only  | `GET`, `HEAD`                              |
+| read-write | `POST`, `PUT` in addition to read-only ops |
+
+Note that `OPTIONS` is always allowed without authentication.
+
+Authentication is failed when:
+
+* A request has no tokens.
+* A request has a token but not registered to the server.
+* A request has a token but not allowed to the requested operation.
+
+In these cases, the server respond with `401 Unauthorized` with body like as: `{"ok": false, "error": "unauthorized"}`.
+
+No one can request write operations if you configures the server with read-only tokens only.
+As a result, the server operates like read-only mode.
 
 ## TLS
 

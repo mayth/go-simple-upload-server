@@ -53,6 +53,12 @@ type ServerConfig struct {
 	FileNamingStrategy string `json:"file_naming_strategy"`
 	// Graceful shutdown timeout in milliseconds.
 	ShutdownTimeout int `json:"shutdown_timeout"`
+	// Enable authentication.
+	EnableAuth bool `json:"enable_auth"`
+	// Authentication tokens for read-only access.
+	ReadOnlyTokens []string `json:"read_only_tokens"`
+	// Authentication tokens for read-write access.
+	ReadWriteTokens []string `json:"read_write_tokens"`
 }
 
 // NewServer creates a new Server.
@@ -64,7 +70,8 @@ func NewServer(config ServerConfig) *Server {
 }
 
 // Start starts listening on `addr`. This function blocks until the server is stopped.
-func (s *Server) Start(ctx context.Context) error {
+// Optionally you can pass a channel to `ready` to be notified when the server is ready to accept connections. You can pass nil if you don't need it.
+func (s *Server) Start(ctx context.Context, ready chan struct{}) error {
 	r := mux.NewRouter()
 	r.HandleFunc("/upload", s.handle(s.handlePost)).Methods(http.MethodPost)
 	r.HandleFunc("/upload", s.handle(s.handleOptions)).Methods(http.MethodOptions)
@@ -74,6 +81,9 @@ func (s *Server) Start(ctx context.Context) error {
 	r.PathPrefix("/files").Methods(http.MethodOptions).HandlerFunc(s.handle(s.handleOptions))
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	r.MethodNotAllowedHandler = http.HandlerFunc(handleMethodNotAllowed)
+	if s.EnableAuth {
+		r.Use(s.authenticationMiddleware)
+	}
 	r.Use(logAccess)
 
 	addr := s.Addr
@@ -84,6 +94,9 @@ func (s *Server) Start(ctx context.Context) error {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("unable to listen on %s: %v", addr, err)
+	}
+	if ready != nil {
+		close(ready)
 	}
 
 	srv := &http.Server{
@@ -331,6 +344,60 @@ func (s *Server) handleOptions(w http.ResponseWriter, r *http.Request) (int, any
 	}
 	w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
 	return http.StatusNoContent, nil
+}
+
+func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// OPTIONS request is always allowed without authentication
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		var token string
+		if auth := r.Header.Get("Authorization"); auth != "" {
+			token = strings.TrimPrefix(auth, "Bearer ")
+		} else if t := r.URL.Query().Get("token"); t != "" {
+			token = t
+		}
+		if token == "" {
+			log.Printf("no token")
+			writeUnauthorized(w, r)
+			return
+		}
+		var allowedTokens []string
+		allowedTokens = append(allowedTokens, s.ReadWriteTokens...)
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			allowedTokens = append(allowedTokens, s.ReadOnlyTokens...)
+		}
+		if !slices.Contains(allowedTokens, token) {
+			log.Printf("invalid token")
+			writeUnauthorized(w, r)
+			return
+		}
+		log.Print("successfully authenticated")
+		r.Header.Del("Authorization")
+		r.URL.Query().Del("token")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func writeUnauthorized(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+	if r.Method != http.MethodHead {
+		w.Header().Set("Content-Type", "application/json")
+	}
+	w.WriteHeader(http.StatusUnauthorized)
+	if r.Method == http.MethodHead {
+		return
+	}
+	resp := ErrorResult{false, "unauthorized"}
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		log.Printf("failed to encode response: %v", err)
+		return
+	}
+	w.Write(respBytes)
 }
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
