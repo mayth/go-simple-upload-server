@@ -73,11 +73,12 @@ Status Code
 Content-Type
 : `application/json`
 
-Body
-: |  Name  |   Type    |               Description               |
-  | ------ | --------- | --------------------------------------- |
-  | `ok`   | `boolean` | `true` if successful.                   |
-  | `path` | `string`  | A path to access this file in this API. |
+Body:
+
+|  Name  |   Type    |               Description               |
+| ------ | --------- | --------------------------------------- |
+| `ok`   | `boolean` | `true` if successful.                   |
+| `path` | `string`  | A path to access this file in this API. |
 
 ##### On Failure
 
@@ -120,11 +121,12 @@ Status Code
 Content-Type
 : `application/json`
 
-Body
-: |  Name  |   Type    |               Description               |
-  | ------ | --------- | --------------------------------------- |
-  | `ok`   | `boolean` | `true` if successful.                   |
-  | `path` | `string`  | A path to access this file in this API. |
+Body:
+
+|  Name  |   Type    |               Description               |
+| ------ | --------- | --------------------------------------- |
+| `ok`   | `boolean` | `true` if successful.                   |
+| `path` | `string`  | A path to access this file in this API. |
 
 ##### On Failure
 
