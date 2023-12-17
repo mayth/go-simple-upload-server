@@ -50,7 +50,9 @@ func main() {
 		if err := json.NewDecoder(f).Decode(&fileConfig); err != nil {
 			log.Fatalf("failed to load config: %v", err)
 		}
-		mergo.Merge(&fileConfig, config, mergo.WithOverride)
+		if err := mergo.Merge(&fileConfig, config, mergo.WithOverride); err != nil {
+			log.Fatalf("failed to merge config: %v", err)
+		}
 		config = fileConfig
 	}
 

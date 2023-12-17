@@ -188,7 +188,9 @@ func (s *Server) handle(f func(w http.ResponseWriter, r *http.Request) (int, any
 			if status != 0 {
 				w.WriteHeader(status)
 			}
-			w.Write(responseBody)
+			if _, err := w.Write(responseBody); err != nil {
+				log.Printf("failed to write response: %v", err)
+			}
 		} else {
 			if status != 0 {
 				w.WriteHeader(status)
@@ -377,7 +379,11 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 		}
 		log.Print("successfully authenticated")
 		r.Header.Del("Authorization")
-		r.URL.Query().Del("token")
+		u := r.URL
+		q := u.Query()
+		q.Del("token")
+		u.RawQuery = q.Encode()
+		r.URL = u
 		next.ServeHTTP(w, r)
 	})
 }
@@ -397,7 +403,9 @@ func writeUnauthorized(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to encode response: %v", err)
 		return
 	}
-	w.Write(respBytes)
+	if _, err := w.Write(respBytes); err != nil {
+		log.Printf("failed to write response: %v", err)
+	}
 }
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
@@ -409,7 +417,9 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	w.Write(respBytes)
+	if _, err := w.Write(respBytes); err != nil {
+		log.Printf("failed to write response: %v", err)
+	}
 }
 
 func handleMethodNotAllowed(w http.ResponseWriter, r *http.Request) {
@@ -432,7 +442,9 @@ func handleMethodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	w.Write(respBytes)
+	if _, err := w.Write(respBytes); err != nil {
+		log.Printf("failed to write response: %v", err)
+	}
 }
 
 func getFileSize(r io.Seeker) (int64, error) {

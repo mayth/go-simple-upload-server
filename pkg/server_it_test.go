@@ -25,9 +25,15 @@ func TestServer(t *testing.T) {
 	docRoot := "/opt/app"
 
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll(docRoot, 0755)
-	afero.WriteFile(fs, path.Join(docRoot, "test.txt"), []byte("lorem ipsum"), 0644)
-	afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644)
+	if err := fs.MkdirAll(docRoot, 0755); err != nil {
+		t.Fatalf("failed to create document root: %v", err)
+	}
+	if err := afero.WriteFile(fs, path.Join(docRoot, "test.txt"), []byte("lorem ipsum"), 0644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+	if err := afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	port, err := getAvailablePort()
@@ -47,7 +53,7 @@ func TestServer(t *testing.T) {
 	server := Server{config, afero.NewBasePathFs(fs, docRoot)}
 	go func() {
 		t.Logf("starting server at %s", addr)
-		server.Start(ctx, ready)
+		server.Start(ctx, ready) // nolint:errcheck
 	}()
 	<-ready
 
@@ -539,9 +545,15 @@ func TestServerWithAuth(t *testing.T) {
 	docRoot := "/opt/app"
 
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll(docRoot, 0755)
-	afero.WriteFile(fs, path.Join(docRoot, "test.txt"), []byte("lorem ipsum"), 0644)
-	afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644)
+	if err := fs.MkdirAll(docRoot, 0755); err != nil {
+		t.Fatalf("failed to create document root: %v", err)
+	}
+	if err := afero.WriteFile(fs, path.Join(docRoot, "test.txt"), []byte("lorem ipsum"), 0644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+	if err := afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	port, err := getAvailablePort()
@@ -566,7 +578,7 @@ func TestServerWithAuth(t *testing.T) {
 	server := Server{config, afero.NewBasePathFs(fs, docRoot)}
 	go func() {
 		t.Logf("starting server at %s", addr)
-		server.Start(ctx, ready)
+		server.Start(ctx, ready) // nolint:errcheck
 	}()
 	<-ready
 

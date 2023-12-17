@@ -67,8 +67,12 @@ func TestGetHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			docRoot := "/opt/app"
 			fs := afero.NewMemMapFs()
-			fs.MkdirAll(path.Join(docRoot, "foo"), 0755)
-			afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644)
+			if err := fs.MkdirAll(path.Join(docRoot, "foo"), 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644); err != nil {
+				t.Fatal(err)
+			}
 			config := ServerConfig{
 				DocumentRoot: "/opt/app",
 				EnableCORS:   true,
@@ -167,8 +171,12 @@ func TestServer_PostHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := afero.NewMemMapFs()
-			fs.MkdirAll(docRoot, 0755)
-			afero.WriteFile(fs, path.Join(docRoot, "ow.txt"), []byte("overwrite?"), 0644)
+			if err := fs.MkdirAll(docRoot, 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := afero.WriteFile(fs, path.Join(docRoot, "ow.txt"), []byte("overwrite?"), 0644); err != nil {
+				t.Fatal(err)
+			}
 			config := ServerConfig{
 				DocumentRoot:  docRoot,
 				EnableCORS:    true,
@@ -311,7 +319,9 @@ func TestServer_PutHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := afero.NewMemMapFs()
-			fs.MkdirAll(docRoot, 0755)
+			if err := fs.MkdirAll(docRoot, 0755); err != nil {
+				t.Fatal(err)
+			}
 			config := ServerConfig{
 				DocumentRoot:  docRoot,
 				EnableCORS:    true,
