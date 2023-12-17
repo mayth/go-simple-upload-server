@@ -24,12 +24,18 @@ Simple HTTP server to save artifacts
         path to config file
   -document_root string
         path to document root directory (default ".")
+  -enable_auth
+        enable authentication
   -enable_cors
         enable CORS header (default true)
   -file_naming_strategy string
         File naming strategy (default "uuid")
   -max_upload_size int
         max upload size in bytes (default 1048576)
+  -read_only_tokens value
+        comma separated list of read only tokens
+  -read_write_tokens value
+        comma separated list of read write tokens
   -shutdown_timeout int
         graceful shutdown timeout in milliseconds (default 15000)
 ```
