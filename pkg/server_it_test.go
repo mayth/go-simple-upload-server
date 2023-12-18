@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -22,42 +23,58 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	docRoot := "/opt/app"
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	fs := afero.NewMemMapFs()
+	var docRoot string
+	var fs afero.Fs
+	if v, ok := os.LookupEnv("TEST_WITH_REAL_FS"); ok && v != "" {
+		docRoot = v
+		fs = afero.NewOsFs()
+	} else {
+		docRoot = "/opt/app"
+		fs = afero.NewMemMapFs()
+	}
+
 	if err := fs.MkdirAll(docRoot, 0755); err != nil {
 		t.Fatalf("failed to create document root: %v", err)
 	}
 	if err := afero.WriteFile(fs, path.Join(docRoot, "test.txt"), []byte("lorem ipsum"), 0644); err != nil {
 		t.Fatalf("failed to create test file: %v", err)
 	}
+	if err := fs.Mkdir(path.Join(docRoot, "foo"), 0755); err != nil && !os.IsExist(err) {
+		t.Fatalf("failed to create directory: %v", err)
+	}
 	if err := afero.WriteFile(fs, path.Join(docRoot, "foo", "bar.txt"), []byte("hello, world"), 0644); err != nil {
 		t.Fatalf("failed to create test file: %v", err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	port, err := getAvailablePort()
-	if err != nil {
-		t.Fatalf("unable to find an available port: %v", err)
+
+	var target string
+	if addr, ok := os.LookupEnv("TEST_TARGET_ADDR"); ok && addr != "" {
+		target = addr
+	} else {
+		port, err := getAvailablePort()
+		if err != nil {
+			t.Fatalf("unable to find an available port: %v", err)
+		}
+		target = net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+		config := ServerConfig{
+			Addr:            target,
+			DocumentRoot:    docRoot,
+			EnableCORS:      true,
+			MaxUploadSize:   16,
+			ShutdownTimeout: 5000,
+		}
+		ready := make(chan struct{})
+		server := Server{config, afero.NewBasePathFs(fs, docRoot)}
+		go func() {
+			t.Logf("starting server at %s", target)
+			server.Start(ctx, ready) // nolint:errcheck
+		}()
+		<-ready
 	}
 
-	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
-	config := ServerConfig{
-		Addr:            addr,
-		DocumentRoot:    docRoot,
-		EnableCORS:      true,
-		MaxUploadSize:   16,
-		ShutdownTimeout: 5000,
-	}
-	ready := make(chan struct{})
-	server := Server{config, afero.NewBasePathFs(fs, docRoot)}
-	go func() {
-		t.Logf("starting server at %s", addr)
-		server.Start(ctx, ready) // nolint:errcheck
-	}()
-	<-ready
-
-	base, err := url.Parse("http://" + addr)
+	base, err := url.Parse("http://" + target)
 	if err != nil {
 		t.Fatalf("failed to parse base url: %v", err)
 	}
