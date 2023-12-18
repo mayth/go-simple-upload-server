@@ -1,0 +1,39 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "v2" ]
+  pull_request:
+    branches: [ "v2" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag mayth/simple-upload-server:$(date +%s)
+
+  push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Log in to Docker Hub
+      uses: docker/login-actions@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Test
+      run: |
+        docker compose -f docker-compose.e2e.yml run --rm test
+        docker compose -f docker-compose.e2e.yml down --rmi local --volumes
+    - name: Build and Publish
+      uses: docker/build-push-action@v5
+      with:
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: mayth/simple-upload-server:latest
