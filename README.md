@@ -6,6 +6,7 @@ Simple HTTP server to save artifacts
 - [Usage](#usage)
 - [Authentication](#authentication)
 - [TLS](#tls)
+- [Testing](#testing)
 - [API](#api)
   - [`POST /upload`](#post-upload)
   - [`PUT /files/:path`](#put-filespath)
@@ -77,6 +78,30 @@ As a result, the server operates like read-only mode.
 v1 has TLS support but I decided to omit it from v2.
 
 Please consider using a reverse proxy like nginx.
+
+## Testing
+
+To run all tests, just run `go test` as usual:
+
+```
+$ go test ./...
+```
+
+This includes end-to-end tests. By default, the server with on-memory FileSystem is created and it starts listening on
+the port chosen randomly. You can control this behavior by setting the environment variables.
+
+If `TEST_WITH_REAL_FS=${PATH_TO_DOCUMENT_ROOT}` is set, the test server uses the real filesystem. Make sure the document
+root directory contains no files; otherwise, some tests might be failed. The directory will not be cleaned after testing.
+
+If `TEST_TARGET_ADDR-${HOST}:${PORT}` is set, the test program doesn't start a local test server and sends requests to
+`http://${HOST}:${PORT}`. Note that the target server's document root should be cleared prior to testing.
+
+This repository has `docker-compose.e2e.yml` to run the E2E test. To run tests using this:
+
+```
+$ docker compose -f docker-compose.e2e.yml run --rm test
+$ docker compose -f docker-compose.e2e.yml down --rmi local --volumes
+```
 
 ## API
 
