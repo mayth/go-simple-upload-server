@@ -1,6 +1,9 @@
-FROM golang:1.14 AS build-env
+FROM --platform=$BUILDPLATFORM golang:1.21 AS build-env
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 
-MAINTAINER Mei Akizuru
+LABEL org.opencontainers.image.authors="Mei Akizuru <chimeaquas@hotmail.com>"
 
 RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
@@ -12,8 +15,8 @@ RUN go mod download
 
 # copy other sources & build
 COPY . /go/src/app
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /go/bin/app
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM alpine:3.11 AS runtime-env
+FROM --platform=linux/${TARGETARCH} alpine:3.19 AS runtime-env
 COPY --from=build-env /go/bin/app /usr/local/bin/app
 ENTRYPOINT ["/usr/local/bin/app"]
