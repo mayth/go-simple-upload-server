@@ -1,10 +1,11 @@
 {
+    "addr": ":8088",
     "document_root": "/opt/app",
     "enable_cors": true,
     "max_upload_size": 1048576,
     "file_naming_strategy": "uuid",
     "shutdown_timeout": 15000,
-    "enable_auth": false,
+    "enable_auth": true,
     "read_only_tokens": [],
     "read_write_tokens": []
 }
