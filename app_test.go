@@ -16,7 +16,7 @@ func Test_parseConfig(t *testing.T) {
 		}
 		defer os.Remove(f.Name())
 		defer f.Close()
-		f.WriteString(`{
+		if _, err := f.WriteString(`{
 			"addr": ":8123",
 			"document_root": "/opt/app",
 			"enable_cors": true,
@@ -26,9 +26,15 @@ func Test_parseConfig(t *testing.T) {
 			"enable_auth": true,
 			"read_only_tokens": ["foo", "bar"],
 			"read_write_tokens": ["baz", "qux"]
-		}`)
-		f.Sync()
-		f.Seek(0, 0)
+		}`); err != nil {
+			t.Fatalf("failed to write to temp file: %v", err)
+		}
+		if err := f.Sync(); err != nil {
+			t.Fatalf("failed to sync temp file: %v", err)
+		}
+		if _, err := f.Seek(0, 0); err != nil {
+			t.Fatalf("failed to seek temp file: %v", err)
+		}
 
 		app := NewApp(os.Args[0])
 		got, err := app.ParseConfig([]string{"-config", f.Name()})
@@ -103,7 +109,7 @@ func Test_parseConfig(t *testing.T) {
 		}
 		defer os.Remove(f.Name())
 		defer f.Close()
-		f.WriteString(`{
+		if _, err := f.WriteString(`{
 			"addr": ":8123",
 			"document_root": "/opt/app",
 			"enable_cors": true,
@@ -113,9 +119,15 @@ func Test_parseConfig(t *testing.T) {
 			"enable_auth": true,
 			"read_only_tokens": ["alice", "bob"],
 			"read_write_tokens": ["charlie", "dave"]
-		}`)
-		f.Sync()
-		f.Seek(0, 0)
+		}`); err != nil {
+			t.Fatalf("failed to write to temp file: %v", err)
+		}
+		if err := f.Sync(); err != nil {
+			t.Fatalf("failed to sync temp file: %v", err)
+		}
+		if _, err := f.Seek(0, 0); err != nil {
+			t.Fatalf("failed to seek temp file: %v", err)
+		}
 		args = append(args, "-config", f.Name())
 
 		got, err := app.ParseConfig(args)
