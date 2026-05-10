@@ -10,7 +10,7 @@ services:
       - docroot:/docroot
     command: -document_root=/docroot -addr=:8080
   test:
-    image: golang:1.21
+    image: golang:1.26
     environment:
       - TEST_WITH_REAL_FS=/docroot
       - TEST_TARGET_ADDR=app:8080
