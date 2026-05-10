@@ -3,6 +3,8 @@ name: Docker Image CI
 on:
   push:
     branches: [ "v2" ]
+    tags:
+      - "v*.*.*"
   pull_request:
     branches: [ "v2" ]
 
@@ -17,6 +19,17 @@ jobs:
   push:
     runs-on: ubuntu-latest
     steps:
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v6
+      with:
+        images: |
+          mayth/simple-upload-server
+        tags: |
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
     - uses: actions/checkout@v6
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4
@@ -35,5 +48,6 @@ jobs:
       uses: docker/build-push-action@v7
       with:
         platforms: linux/amd64,linux/arm64
-        push: true
-        tags: mayth/simple-upload-server:latest
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
