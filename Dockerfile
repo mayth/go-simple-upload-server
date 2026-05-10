@@ -14,6 +14,6 @@ RUN go mod download
 COPY . /go/src/app
 RUN GOOS=linux GOARCH=${ARCH} CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM scratch
+FROM gcr.io/distroless/static-debian13:latest
 COPY --from=build /go/bin/app /usr/local/bin/app
 ENTRYPOINT ["/usr/local/bin/app"]
