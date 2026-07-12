@@ -284,6 +284,21 @@ func (a *app) ParseConfig(args []string) (*simpleuploadserver.ServerConfig, erro
 	}
 	log.Printf("merged flag config: %+v", config)
 
+	// mergo.WithOverride does not override a destination field with a zero-value
+	// source field. An explicit `-read_timeout 0` parses to the zero value, which
+	// is indistinguishable from an unset flag, so it never overrides the non-zero
+	// default ReadTimeout and the documented "zero ... means no timeout" cannot be
+	// selected. Apply the timeout flags directly when the user actually provided
+	// them so that an explicit 0 disables the timeout as documented.
+	a.flagSet.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "read_timeout":
+			config.ReadTimeout = Duration(a.readTimeout)
+		case "write_timeout":
+			config.WriteTimeout = Duration(a.writeTimeout)
+		}
+	})
+
 	v := config.AsConfig()
 	return &v, nil
 }
