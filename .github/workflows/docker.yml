@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag mayth/simple-upload-server:$(date +%s)
 
@@ -31,7 +31,7 @@ jobs:
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4
     - name: Setup Docker Buildx
