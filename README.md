@@ -172,10 +172,10 @@ Body:
 
 ##### On Failure
 
-|   StatusCode   |                                              When                                              |
-| -------------- | ---------------------------------------------------------------------------------------------- |
-| `413 Request Entity Too Large` | The file or multipart body exceeds the upload limits. |
-| `409 Conflict` | There is the file whose name is the same as the uploading file and overwriting is not allowed. |
+|           StatusCode           |                                              When                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `413 Request Entity Too Large` | The file or multipart body exceeds the upload limits.                                          |
+| `409 Conflict`                 | There is the file whose name is the same as the uploading file and overwriting is not allowed. |
 
 #### Example
 
@@ -221,10 +221,10 @@ Body:
 
 ##### On Failure
 
-|   StatusCode   |                                              When                                              |
-| -------------- | ---------------------------------------------------------------------------------------------- |
-| `413 Request Entity Too Large` | The file or multipart body exceeds the upload limits. |
-| `409 Conflict` | There is the file whose name is the same as the uploading file and overwriting is not allowed. |
+|           StatusCode           |                                              When                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `413 Request Entity Too Large` | The file or multipart body exceeds the upload limits.                                          |
+| `409 Conflict`                 | There is the file whose name is the same as the uploading file and overwriting is not allowed. |
 
 #### Example
 
@@ -301,8 +301,8 @@ Body
 
 ##### On Failure
 
-|   StatusCode   |                                              When                                              |
-| -------------- | ---------------------------------------------------------------------------------------------- |
+|   StatusCode    |            When             |
+| --------------- | --------------------------- |
 | `404 Not Found` | No such file on the server. |
 
 #### Example
