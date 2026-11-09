@@ -1,6 +1,6 @@
 module github.com/mayth/go-simple-upload-server/v2
 
-go 1.25.0
+go 1.26.0
 
 require (
 	dario.cat/mergo v1.0.2
@@ -9,4 +9,4 @@ require (
 	github.com/spf13/afero v1.15.0
 )
 
-require golang.org/x/text v0.37.0 // indirect
+require golang.org/x/text v0.43.0 // indirect
