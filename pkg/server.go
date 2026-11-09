@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
@@ -233,6 +235,23 @@ func (s *Server) handlePut(w http.ResponseWriter, r *http.Request) (int, any) {
 }
 
 func (s *Server) processUpload(w http.ResponseWriter, r *http.Request, path string) (int, string, error) {
+	// Keep the file-size contract while bounding multipart framing and other parts.
+	const multipartAllowance int64 = 1 * 1024 * 1024 // 1 MiB
+	fileLimit := max(s.MaxUploadSize, 0)
+	bodyLimit := int64(math.MaxInt64)
+	if fileLimit <= math.MaxInt64-multipartAllowance {
+		bodyLimit = fileLimit + multipartAllowance
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, bodyLimit)
+	// Routers can copy the request, hiding its parsed form from net/http cleanup.
+	defer func() {
+		if r.MultipartForm != nil {
+			if err := r.MultipartForm.RemoveAll(); err != nil {
+				log.Printf("failed to remove multipart temporary files: %v", err)
+			}
+		}
+	}()
+
 	allowOverwrite := parseBoolishValue(r.URL.Query().Get(OverwriteQueryKey))
 	if allowOverwrite {
 		log.Printf("allowOverwrite")
@@ -240,12 +259,17 @@ func (s *Server) processUpload(w http.ResponseWriter, r *http.Request, path stri
 
 	srcFile, info, err := r.FormFile(FormFileKey)
 	if err != nil {
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) || errors.Is(err, multipart.ErrMessageTooLarge) {
+			return http.StatusRequestEntityTooLarge, "", ErrFileSizeLimitExceeded
+		}
 		log.Printf("failed to obtain form file: %v", err)
 		return http.StatusInternalServerError, "", fmt.Errorf("cannot obtain the uploaded content")
 	}
-	src := http.MaxBytesReader(w, srcFile, s.MaxUploadSize)
-	// MaxBytesReader closes the underlying io.Reader on its Close() is called
-	defer src.Close()
+	defer srcFile.Close()
+	if info.Size > fileLimit {
+		return http.StatusRequestEntityTooLarge, "", ErrFileSizeLimitExceeded
+	}
 
 	// on POST method request
 	if path == "" {
@@ -282,12 +306,8 @@ func (s *Server) processUpload(w http.ResponseWriter, r *http.Request, path stri
 		return http.StatusInternalServerError, "", fmt.Errorf("cannot open file")
 	}
 	defer dstFile.Close()
-	written, err := io.Copy(dstFile, src)
+	written, err := io.Copy(dstFile, srcFile)
 	if err != nil {
-		var maxBytesError *http.MaxBytesError
-		if errors.As(err, &maxBytesError) {
-			return http.StatusRequestEntityTooLarge, "", ErrFileSizeLimitExceeded
-		}
 		log.Printf("failed to write the uploaded content: %v", err)
 		return http.StatusInternalServerError, "", fmt.Errorf("failed to write the content")
 	}

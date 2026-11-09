@@ -48,6 +48,11 @@ Simple HTTP server to save artifacts
 
 Configurations via the arguments take precedence over those came from the config file.
 
+`max_upload_size` limits the size of the uploaded file in bytes (default: 1 MiB).
+Multipart parsing is also limited to `max_upload_size` plus 1 MiB for multipart
+framing, metadata, and other parts. Uploads exceeding either limit return
+`413 Request Entity Too Large` before creating or overwriting a destination file.
+
 ## Authentication
 
 This server does not require authentication by default. Anyone who can access the server can get/upload files.
@@ -169,6 +174,7 @@ Body:
 
 |   StatusCode   |                                              When                                              |
 | -------------- | ---------------------------------------------------------------------------------------------- |
+| `413 Request Entity Too Large` | The file or multipart body exceeds the upload limits. |
 | `409 Conflict` | There is the file whose name is the same as the uploading file and overwriting is not allowed. |
 
 #### Example
@@ -217,6 +223,7 @@ Body:
 
 |   StatusCode   |                                              When                                              |
 | -------------- | ---------------------------------------------------------------------------------------------- |
+| `413 Request Entity Too Large` | The file or multipart body exceeds the upload limits. |
 | `409 Conflict` | There is the file whose name is the same as the uploading file and overwriting is not allowed. |
 
 #### Example
